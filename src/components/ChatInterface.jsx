@@ -132,7 +132,7 @@ const ChatInterface = () => {
   };
 
   return (
-    <div className="flex h-screen bg-white">
+    <div className="flex w-screen h-screen bg-white">
       {/* Left Sidebar */}
       <div className="w-64 bg-gray-50 border-r border-gray-200 flex flex-col">
         <div className="p-3">
@@ -228,15 +228,14 @@ const ChatInterface = () => {
         <div className="border-b border-gray-200 p-4 flex justify-between items-center">
           <h2 className="text-lg font-semibold">ChatGPT</h2>
           <div className="flex items-center gap-2">
+            
             <Button 
               variant="ghost" 
               size="icon"
               onClick={() => setShowChatSearch(!showChatSearch)}
+              className="relative"
             >
-              <Search className="h-4 w-4 text-black" />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <ExternalLink className="h-4 w-4" />
+            <Search className="absolute inset-0 m-auto h-4 w-4 text-gray-400 z-10" />
             </Button>
           </div>
         </div>
