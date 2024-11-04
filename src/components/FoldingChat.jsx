@@ -4,9 +4,9 @@ import { Card } from './ui/card';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 
-const MessageComponent = ({ message, onCreateSection }) => (
+const MessageComponent = ({ message, onCreateSection, isInSplitView = false }) => (
     <div className="pl-4 mb-4">
-      {message.sender === 'User' && !message.hasSection && (
+      {message.sender === 'User' && !isInSplitView && (
         <div className="mb-2">
           <Button 
             variant="ghost" 
@@ -25,7 +25,7 @@ const MessageComponent = ({ message, onCreateSection }) => (
     </div>
   );
   
-  const SectionComponent = ({ section, onToggle, isSelected, onSelect }) => (
+  const SectionComponent = ({ section, onToggle, isSelected, onSelect, children }) => (
     <div 
       className={`mb-4 border-l-2 ${isSelected ? 'border-green-500' : 'border-blue-500'}`}
       onClick={() => onSelect(section.id)}
@@ -43,6 +43,11 @@ const MessageComponent = ({ message, onCreateSection }) => (
         }
         <h3 className="font-medium">{section.title}</h3>
       </div>
+      {section.isExpanded && (
+        <div className="mt-2">
+          {children}
+        </div>
+      )}
     </div>
   );
   
@@ -72,21 +77,24 @@ const MessageComponent = ({ message, onCreateSection }) => (
     const confirmAddSection = () => {
       if (newSectionTitle.trim()) {
         const messageIndex = messages.findIndex(m => m.id === isAddingSection);
-        const newMessages = [...messages];
-        newMessages.splice(messageIndex, 0, {
-          id: Date.now(),
-          type: 'section',
-          title: newSectionTitle,
-          isExpanded: true
-        });
-        // Mark the message as having a section
-        newMessages[messageIndex + 1] = {
-          ...newMessages[messageIndex + 1],
-          hasSection: true
-        };
-        setMessages(newMessages);
-        setIsAddingSection(null);
-        setNewSectionTitle('');
+        if (messageIndex !== -1) {
+          const newMessages = [...messages];
+          
+          // Create the new section
+          const newSection = {
+            id: Date.now(),
+            type: 'section',
+            title: newSectionTitle,
+            isExpanded: true
+          };
+  
+          // Insert the new section immediately before the selected message
+          newMessages.splice(messageIndex, 0, newSection);
+  
+          setMessages(newMessages);
+          setIsAddingSection(null);
+          setNewSectionTitle('');
+        }
       }
     };
   
@@ -123,8 +131,21 @@ const MessageComponent = ({ message, onCreateSection }) => (
       };
     };
   
+    // Helper function to get messages for a section
+    const getMessagesForSection = (sectionId) => {
+      const sectionIndex = messages.findIndex(m => m.id === sectionId);
+      const nextSectionIndex = messages.findIndex((m, i) => 
+        i > sectionIndex && m.type === 'section'
+      );
+      
+      return messages.slice(
+        sectionIndex + 1,
+        nextSectionIndex === -1 ? undefined : nextSectionIndex
+      );
+    };
+  
     return (
-      <div className="h-screen  w-screen bg-white flex flex-col">
+      <div className="h-screen w-screen bg-white flex flex-col">
         <div className="border-b p-4 flex justify-between items-center">
           <h1 className="text-xl font-semibold">Chat</h1>
           <Button 
@@ -182,6 +203,7 @@ const MessageComponent = ({ message, onCreateSection }) => (
                               key={message.id}
                               message={message}
                               onCreateSection={addSection}
+                              isInSplitView={true}
                             />
                           ))}
                         </div>
@@ -193,50 +215,53 @@ const MessageComponent = ({ message, onCreateSection }) => (
             </div>
           ) : (
             <div className="h-full overflow-y-auto p-4">
-              {messages.map((item) => (
-                <div key={item.id}>
-                  {item.type === 'section' ? (
+              {messages.map((item) => {
+                if (item.type === 'section') {
+                  const sectionMessages = getMessagesForSection(item.id);
+                  return (
                     <SectionComponent 
+                      key={item.id}
                       section={item}
                       onToggle={toggleSection}
                       isSelected={false}
                       onSelect={() => {}}
-                    />
-                  ) : (
-                    <>
-                      {isAddingSection === item.id ? (
-                        <div className="pl-4 mb-4 flex items-center gap-2">
-                          <Input
-                            placeholder="Section title..."
-                            value={newSectionTitle}
-                            onChange={(e) => setNewSectionTitle(e.target.value)}
-                            className="flex-1"
-                            autoFocus
-                          />
-                          <Button size="sm" onClick={confirmAddSection}>
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => {
-                              setIsAddingSection(null);
-                              setNewSectionTitle('');
-                            }}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ) : (
+                    >
+                      {sectionMessages.map(message => (
                         <MessageComponent 
-                          message={item}
+                          key={message.id}
+                          message={message}
                           onCreateSection={addSection}
                         />
-                      )}
-                    </>
-                  )}
-                </div>
-              ))}
+                      ))}
+                    </SectionComponent>
+                  );
+                }
+                
+                return isAddingSection === item.id ? (
+                  <div key={item.id} className="pl-4 mb-4 flex items-center gap-2">
+                    <Input
+                      placeholder="Section title..."
+                      value={newSectionTitle}
+                      onChange={(e) => setNewSectionTitle(e.target.value)}
+                      className="flex-1"
+                      autoFocus
+                    />
+                    <Button size="sm" onClick={confirmAddSection}>
+                      <Check className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => {
+                        setIsAddingSection(null);
+                        setNewSectionTitle('');
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : null;
+              })}
             </div>
           )}
         </div>
