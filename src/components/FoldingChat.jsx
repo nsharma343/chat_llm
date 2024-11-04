@@ -5,21 +5,20 @@ import { Input } from './ui/input';
 import { Button } from './ui/button';
 
 const MessageComponent = ({ message, onCreateSection, isInSplitView = false }) => (
-    <div className="pl-4 mb-4">
-      {message.sender === 'User' && !isInSplitView && (
-        <div className="mb-2">
+    <div className="pl-4 mb-4 relative group">
+      <div className="mb-2 flex items-center justify-between relative">
+        <span className="font-medium">{message.sender}</span>
+        {message.sender === 'User' && !isInSplitView && (
           <Button 
             variant="ghost" 
             size="sm"
             onClick={() => onCreateSection(message.id)}
-            className="text-blue-500 hover:text-blue-700"
+            className="ml-2 hover:bg-gray-100 rounded text-gray-400 hover:text-blue-500 text-sm"
+            title="Add section break above"
           >
-            <Plus className="h-4 w-4 mr-1" /> Add Section Above
+            ^
           </Button>
-        </div>
-      )}
-      <div className="mb-2 flex items-center justify-between">
-        <span className="font-medium">{message.sender}</span>
+        )}
       </div>
       <div className="text-gray-700">{message.content}</div>
     </div>
